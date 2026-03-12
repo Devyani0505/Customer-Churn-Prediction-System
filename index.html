@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChurnScope</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Customer Retention Console</p>
+        <h1>Predict churn before the customer disappears.</h1>
+        <p class="hero-text">
+          This frontend wraps your trained churn pipeline and scores a single customer profile
+          using the same engineered features defined in the notebook.
+        </p>
+      </div>
+      <div class="hero-card">
+        <span class="hero-label">Model artifact</span>
+        <strong>best_churn_pipeline.pkl</strong>
+        <p>High-balance threshold: {{ '%.2f'|format(balance_threshold) }}</p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel form-panel">
+        <div class="panel-header">
+          <p class="section-tag">Input</p>
+          <h2>Customer profile</h2>
+        </div>
+
+        <form method="post" class="prediction-form">
+          <label>
+            <span>Credit score</span>
+            <input type="number" name="credit_score" min="300" max="900" value="{{ form_values.credit_score }}" required>
+          </label>
+
+          <label>
+            <span>Country</span>
+            <select name="country" required>
+              {% for country in ['France', 'Germany', 'Spain'] %}
+              <option value="{{ country }}" {% if form_values.country == country %}selected{% endif %}>{{ country }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label>
+            <span>Gender</span>
+            <select name="gender" required>
+              {% for gender in ['Male', 'Female'] %}
+              <option value="{{ gender }}" {% if form_values.gender == gender %}selected{% endif %}>{{ gender }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label>
+            <span>Age</span>
+            <input type="number" name="age" min="18" max="100" value="{{ form_values.age }}" required>
+          </label>
+
+          <label>
+            <span>Tenure</span>
+            <input type="number" name="tenure" min="0" max="50" value="{{ form_values.tenure }}" required>
+          </label>
+
+          <label>
+            <span>Balance</span>
+            <input type="number" name="balance" min="0" step="0.01" value="{{ form_values.balance }}" required>
+          </label>
+
+          <label>
+            <span>Products number</span>
+            <input type="number" name="products_number" min="1" max="10" value="{{ form_values.products_number }}" required>
+          </label>
+
+          <label>
+            <span>Has credit card</span>
+            <select name="credit_card" required>
+              <option value="1" {% if form_values.credit_card == '1' %}selected{% endif %}>Yes</option>
+              <option value="0" {% if form_values.credit_card == '0' %}selected{% endif %}>No</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Active member</span>
+            <select name="active_member" required>
+              <option value="1" {% if form_values.active_member == '1' %}selected{% endif %}>Yes</option>
+              <option value="0" {% if form_values.active_member == '0' %}selected{% endif %}>No</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Estimated salary</span>
+            <input type="number" name="estimated_salary" min="0" step="0.01" value="{{ form_values.estimated_salary }}" required>
+          </label>
+
+          <button type="submit">Run prediction</button>
+        </form>
+      </section>
+
+      <section class="panel result-panel">
+        <div class="panel-header">
+          <p class="section-tag">Output</p>
+          <h2>Risk result</h2>
+        </div>
+
+        {% if error %}
+        <div class="alert error">
+          <strong>Prediction failed.</strong>
+          <p>{{ error }}</p>
+        </div>
+        {% elif probability is not none %}
+        <div class="score-card {% if prediction == 1 %}danger{% else %}safe{% endif %}">
+          <p class="score-label">{{ risk_band }}</p>
+          <h3>{{ '%.1f'|format(probability * 100) }}%</h3>
+          <p class="score-text">
+            {% if prediction == 1 %}
+            The model predicts this customer is likely to churn.
+            {% else %}
+            The model predicts this customer is likely to stay.
+            {% endif %}
+          </p>
+        </div>
+
+        <div class="facts">
+          <div>
+            <span>Binary output</span>
+            <strong>{{ prediction }}</strong>
+          </div>
+          <div>
+            <span>Churn probability</span>
+            <strong>{{ '%.4f'|format(probability) }}</strong>
+          </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <p>Submit a profile to generate the churn probability and risk band.</p>
+        </div>
+        {% endif %}
+      </section>
+    </main>
+  </div>
+</body>
+</html>
